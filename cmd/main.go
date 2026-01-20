@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/reservation-v/vlang/internal/bootstrap"
 	"github.com/reservation-v/vlang/internal/modfile"
 )
 
@@ -18,8 +19,13 @@ func run() error {
 		return fmt.Errorf("parse module path: %w", err)
 	}
 
-	fmt.Println(modulePath)
+	projectInfo, err := bootstrap.Inspect(".")
+	if err != nil {
+		return fmt.Errorf("inspect project info: %w", err)
+	}
 
+	fmt.Println("modulePath: ", modulePath)
+	fmt.Println("projectInfo: ", projectInfo)
 	return nil
 }
 

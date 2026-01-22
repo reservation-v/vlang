@@ -21,7 +21,7 @@ func Run(args []string) error {
 			return err
 		}
 	default:
-		fmt.Printf("unknown subcommand %q\n", subCommand)
+		return fmt.Errorf("unknown subcommand %q\n", subCommand)
 	}
 
 	return nil

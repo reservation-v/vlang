@@ -44,8 +44,6 @@ func Inspect(dir string) (ProjectInfo, error) {
 		}
 	} else if len(importSlice) == 1 {
 		name = importSlice[0]
-	} else {
-		return ProjectInfo{}, fmt.Errorf("len(name) <= 2")
 	}
 
 	var hasVendor bool

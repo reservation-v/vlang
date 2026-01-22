@@ -4,29 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/reservation-v/vlang/internal/bootstrap"
-	"github.com/reservation-v/vlang/internal/modfile"
+	"github.com/reservation-v/vlang/internal/app"
 )
 
 func run() error {
-	data, err := os.ReadFile("go.mod")
-	if err != nil {
-		return fmt.Errorf("read go.mod: %w", err)
-	}
-
-	modulePath, err := modfile.ParseModulePath(data)
-	if err != nil {
-		return fmt.Errorf("parse module path: %w", err)
-	}
-
-	projectInfo, err := bootstrap.Inspect(".")
-	if err != nil {
-		return fmt.Errorf("inspect project info: %w", err)
-	}
-
-	fmt.Println("modulePath: ", modulePath)
-	fmt.Println("projectInfo: ", projectInfo)
-	return nil
+	return app.Run(os.Args[1:])
 }
 
 func main() {

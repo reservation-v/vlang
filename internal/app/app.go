@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 
-	"github.com/reservation-v/vlang/internal/bootstrap"
 	"github.com/reservation-v/vlang/internal/cli"
 )
 
@@ -16,28 +15,13 @@ func Run(args []string) error {
 
 	switch subCommand {
 	case "bootstrap":
-		err := runBootstrap(cmdArgs)
+		err := cli.RunBootstrap(cmdArgs)
 		if err != nil {
 			return err
 		}
 	default:
-		return fmt.Errorf("unknown subcommand %q\n", subCommand)
+		return fmt.Errorf("unknown subcommand %q", subCommand)
 	}
-
-	return nil
-}
-
-func runBootstrap(args []string) error {
-	dir, err := cli.Bootstrap(args)
-	if err != nil {
-		return err
-	}
-
-	projectInfo, err := bootstrap.Inspect(dir)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Project info: %+v\n", projectInfo)
 
 	return nil
 }

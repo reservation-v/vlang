@@ -47,8 +47,10 @@ func Inspect(dir string) (ProjectInfo, error) {
 	}
 
 	var hasVendor bool
+
 	vendorPath := filepath.Join(dir, "vendor")
 	info, err := os.Stat(vendorPath)
+
 	if err == nil {
 		hasVendor = info.IsDir()
 	} else if os.IsNotExist(err) {

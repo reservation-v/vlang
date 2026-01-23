@@ -59,6 +59,12 @@ func Inspect(dir string) (ProjectInfo, error) {
 		return ProjectInfo{}, fmt.Errorf("stat vendor: %w", err)
 	}
 
-	return ProjectInfo{Dir: dir, ModulePath: modulePath, ImportPath: importPath, Name: name, HasVendor: hasVendor}, nil
+	return ProjectInfo{
+		Dir:        dir,
+		ModulePath: modulePath,
+		ImportPath: importPath,
+		Name:       name,
+		HasVendor:  hasVendor,
+	}, nil
 
 }

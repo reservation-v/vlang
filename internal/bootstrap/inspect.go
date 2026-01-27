@@ -11,11 +11,11 @@ import (
 )
 
 type ProjectInfo struct {
-	Dir        string
-	ModulePath string
-	ImportPath string
-	Name       string
-	HasVendor  bool
+	Dir        string `json:"dir"`
+	ModulePath string `json:"module_path"`
+	ImportPath string `json:"import_path"`
+	Name       string `json:"name"`
+	HasVendor  bool   `json:"has_vendor"`
 }
 
 func Inspect(dir string) (ProjectInfo, error) {

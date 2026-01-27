@@ -15,18 +15,28 @@ func RunBootstrap(args []string) error {
 		return fmt.Errorf("bootstrap parse flags: %w", err)
 	}
 
-	if bootstrapFlags.Vendor == true {
+	absDir, err := filepath.Abs(bootstrapFlags.Dir)
+	if err != nil {
+		return fmt.Errorf("bootstrap absolute path: %w", err)
+	}
+	bootstrapFlags.Dir = absDir
+
+	vendorInfo := VendorInfo{}
+	if !bootstrapFlags.Vendor {
+		vendorInfo.Status = "skipped"
+		vendorInfo.Enabled = false
+	} else {
 		hadVendorBefore, err := bootstrap.Vendor(bootstrapFlags.Dir)
 		if err != nil {
 			return fmt.Errorf("vendor: %w", err)
 		}
 		if hadVendorBefore {
-			fmt.Println("vendor updated")
+			vendorInfo.Status = "updated"
+			vendorInfo.Enabled = true
 		} else {
-			fmt.Println("vendor created")
+			vendorInfo.Status = "created"
+			vendorInfo.Enabled = true
 		}
-	} else if bootstrapFlags.Vendor != false {
-		return fmt.Errorf("unknown vendor flag: %q", bootstrapFlags.Vendor)
 	}
 
 	projectInfo, err := bootstrap.Inspect(bootstrapFlags.Dir)
@@ -34,12 +44,10 @@ func RunBootstrap(args []string) error {
 		return fmt.Errorf("inspect: %w", err)
 	}
 
-	projectInfo.Dir, err = filepath.Abs(bootstrapFlags.Dir)
+	err = WriteOutput(bootstrapFlags.Format, projectInfo, vendorInfo)
 	if err != nil {
-		return fmt.Errorf("bootstrap absolute path: %w", err)
+		return fmt.Errorf("write output: %w", err)
 	}
-
-	fmt.Printf("Project info: %+v\n", projectInfo)
 
 	return nil
 }
@@ -47,6 +55,7 @@ func RunBootstrap(args []string) error {
 type BootstrapFlags struct {
 	Dir    string
 	Vendor bool
+	Format string
 }
 
 func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
@@ -54,7 +63,8 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 	fs.SetOutput(os.Stderr)
 
 	dirPtr := fs.String("dir", ".", "upstream project directory")
-	needVendor := fs.Bool("vendor", true, "enable/disable vendoring (yes/no)")
+	needVendor := fs.Bool("vendor", true, "enable/disable vendoring (true/false)")
+	format := fs.String("format", "json", "how to format project info")
 	if err := fs.Parse(args); err != nil {
 		return BootstrapFlags{}, err
 	}
@@ -62,6 +72,7 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 	bsFlags := BootstrapFlags{
 		Dir:    *dirPtr,
 		Vendor: *needVendor,
+		Format: *format,
 	}
 
 	return bsFlags, nil

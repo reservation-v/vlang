@@ -12,7 +12,7 @@ func Vendor(dir string) (bool, error) {
 	cmd.Dir = dir
 
 	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = os.Stderr
 
 	var hadVendorBefore bool
 	vendorPath := filepath.Join(dir, "vendor")
@@ -40,5 +40,5 @@ func Vendor(dir string) (bool, error) {
 		return false, nil
 	}
 
-	return false, fmt.Errorf("vendor in dir=%q not found", dir)
+	return false, fmt.Errorf("vendorDir in %q not found", dir)
 }

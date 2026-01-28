@@ -3,7 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 
 	"github.com/reservation-v/vlang/internal/bootstrap"
 )
@@ -18,14 +18,17 @@ type output struct {
 	Vendor      VendorInfo            `json:"vendor"`
 }
 
-func WriteOutput(format string, projectInfo bootstrap.ProjectInfo, vendorInfo VendorInfo) error {
+func WriteOutput(w io.Writer, format string, projectInfo bootstrap.ProjectInfo, vendorInfo VendorInfo) error {
 	switch format {
 	case "json":
-		enc := json.NewEncoder(os.Stdout)
+		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(output{projectInfo, vendorInfo})
 	case "text":
-		printer(projectInfo, vendorInfo)
+		err := printer(w, projectInfo, vendorInfo)
+		if err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unknown output format: %s", format)
 	}
@@ -33,8 +36,8 @@ func WriteOutput(format string, projectInfo bootstrap.ProjectInfo, vendorInfo Ve
 	return nil
 }
 
-func printer(projectInfo bootstrap.ProjectInfo, vendorInfo VendorInfo) {
-	fmt.Println(
+func printer(w io.Writer, projectInfo bootstrap.ProjectInfo, vendorInfo VendorInfo) error {
+	_, err := fmt.Fprintln(w,
 		"Project Info:",
 		"\nName:", projectInfo.Name,
 		"\nDir:", projectInfo.Dir,
@@ -42,4 +45,9 @@ func printer(projectInfo bootstrap.ProjectInfo, vendorInfo VendorInfo) {
 		"\nImportPath:", projectInfo.ImportPath,
 		"\nVendorStatus", vendorInfo.Status,
 	)
+	if err != nil {
+		return fmt.Errorf("printer: %w", err)
+	}
+
+	return nil
 }

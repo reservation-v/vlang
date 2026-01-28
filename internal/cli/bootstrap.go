@@ -3,6 +3,7 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -44,7 +45,47 @@ func RunBootstrap(args []string) error {
 		return fmt.Errorf("inspect: %w", err)
 	}
 
-	err = WriteOutput(bootstrapFlags.Format, projectInfo, vendorInfo)
+	var writer io.Writer
+	if bootstrapFlags.Output == "" {
+		writer = os.Stdout
+	} else {
+		info, err := os.Stat(bootstrapFlags.Output)
+
+		var exists bool
+		if err == nil {
+			if info.IsDir() {
+				return fmt.Errorf("cannot write to directory")
+			}
+			exists = true
+			fmt.Fprintln(os.Stderr, "file already exists")
+		} else if os.IsNotExist(err) {
+			exists = false
+		} else {
+			return fmt.Errorf("os stat: %w", err)
+		}
+
+		file, err := os.Create(bootstrapFlags.Output)
+		if err != nil {
+			return fmt.Errorf("create file: %w", err)
+		}
+
+		defer func() {
+			if err := file.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, "close output file:", err)
+			}
+		}()
+
+		writer = file
+
+		if exists {
+			fmt.Fprintln(os.Stderr, "file was overwritten")
+		} else {
+			fmt.Fprintln(os.Stderr, "file was created")
+		}
+
+	}
+
+	err = WriteOutput(writer, bootstrapFlags.Format, projectInfo, vendorInfo)
 	if err != nil {
 		return fmt.Errorf("write output: %w", err)
 	}
@@ -56,6 +97,7 @@ type BootstrapFlags struct {
 	Dir    string
 	Vendor bool
 	Format string
+	Output string
 }
 
 func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
@@ -65,6 +107,7 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 	dirPtr := fs.String("dir", ".", "upstream project directory")
 	needVendor := fs.Bool("vendor", true, "enable/disable vendoring (true/false)")
 	format := fs.String("format", "json", "how to format project info")
+	output := fs.String("output", "", "write output to file (default: stdout)")
 	if err := fs.Parse(args); err != nil {
 		return BootstrapFlags{}, err
 	}
@@ -73,6 +116,7 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 		Dir:    *dirPtr,
 		Vendor: *needVendor,
 		Format: *format,
+		Output: *output,
 	}
 
 	return bsFlags, nil

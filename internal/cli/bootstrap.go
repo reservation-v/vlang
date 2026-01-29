@@ -3,7 +3,6 @@ package cli
 import (
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -45,49 +44,30 @@ func RunBootstrap(args []string) error {
 		return fmt.Errorf("inspect: %w", err)
 	}
 
-	var writer io.Writer
-	if bootstrapFlags.Output == "" {
-		writer = os.Stdout
-	} else {
-		info, err := os.Stat(bootstrapFlags.Output)
+	writer, closeFn, existed, err := openOutputWriter(bootstrapFlags.Out.Output)
 
-		var exists bool
-		if err == nil {
-			if info.IsDir() {
-				return fmt.Errorf("cannot write to directory")
-			}
-			exists = true
-			fmt.Fprintln(os.Stderr, "file already exists")
-		} else if os.IsNotExist(err) {
-			exists = false
-		} else {
-			return fmt.Errorf("os stat: %w", err)
+	if err != nil {
+		return fmt.Errorf("open output writer: %w", err)
+	}
+
+	defer func() {
+		closeErr := closeFn()
+		if closeErr != nil {
+			fmt.Fprintln(os.Stderr, closeErr)
 		}
+	}()
 
-		file, err := os.Create(bootstrapFlags.Output)
-		if err != nil {
-			return fmt.Errorf("create file: %w", err)
-		}
+	err = WriteOutput(writer, bootstrapFlags.Out.Format, projectInfo, vendorInfo)
+	if err != nil {
+		return fmt.Errorf("write output: %w", err)
+	}
 
-		defer func() {
-			if err := file.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, "close output file:", err)
-			}
-		}()
-
-		writer = file
-
-		if exists {
+	if bootstrapFlags.Out.Output != "" {
+		if existed {
 			fmt.Fprintln(os.Stderr, "file was overwritten")
 		} else {
 			fmt.Fprintln(os.Stderr, "file was created")
 		}
-
-	}
-
-	err = WriteOutput(writer, bootstrapFlags.Format, projectInfo, vendorInfo)
-	if err != nil {
-		return fmt.Errorf("write output: %w", err)
 	}
 
 	return nil
@@ -96,8 +76,7 @@ func RunBootstrap(args []string) error {
 type BootstrapFlags struct {
 	Dir    string
 	Vendor bool
-	Format string
-	Output string
+	Out    OutputFlags
 }
 
 func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
@@ -106,8 +85,7 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 
 	dirPtr := fs.String("dir", ".", "upstream project directory")
 	needVendor := fs.Bool("vendor", true, "enable/disable vendoring (true/false)")
-	format := fs.String("format", "json", "how to format project info")
-	output := fs.String("output", "", "write output to file (default: stdout)")
+	format, output := addOutputFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		return BootstrapFlags{}, err
 	}
@@ -115,8 +93,7 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 	bsFlags := BootstrapFlags{
 		Dir:    *dirPtr,
 		Vendor: *needVendor,
-		Format: *format,
-		Output: *output,
+		Out:    OutputFlags{Format: *format, Output: *output},
 	}
 
 	return bsFlags, nil

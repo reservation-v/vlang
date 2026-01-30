@@ -43,7 +43,7 @@ func printer(w io.Writer, projectInfo bootstrap.ProjectInfo, vendorInfo VendorIn
 		"\nDir:", projectInfo.Dir,
 		"\nModulePath:", projectInfo.ModulePath,
 		"\nImportPath:", projectInfo.ImportPath,
-		"\nVendorStatus", vendorInfo.Status,
+		"\nVendorStatus:", vendorInfo.Status,
 	)
 	if err != nil {
 		return fmt.Errorf("printer: %w", err)

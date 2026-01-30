@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type OutputFlags struct {
@@ -52,4 +53,18 @@ func openOutputWriter(path string) (w io.Writer, closeFn func() error, existed b
 		return nil
 	}
 	return w, closeFn, existed, nil
+}
+
+func addDirFlag(fs *flag.FlagSet) *string {
+	dirPtr := fs.String("dir", ".", "upstream project directory")
+	return dirPtr
+}
+
+func absPath(path string) (string, error) {
+	absDir, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("bootstrap absolute path: %w", err)
+	}
+
+	return absDir, nil
 }

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/reservation-v/vlang/internal/bootstrap"
 )
@@ -15,9 +14,9 @@ func RunBootstrap(args []string) error {
 		return fmt.Errorf("bootstrap parse flags: %w", err)
 	}
 
-	absDir, err := filepath.Abs(bootstrapFlags.Dir)
+	absDir, err := absPath(bootstrapFlags.Dir)
 	if err != nil {
-		return fmt.Errorf("bootstrap absolute path: %w", err)
+		return err
 	}
 	bootstrapFlags.Dir = absDir
 
@@ -83,7 +82,7 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 	fs := flag.NewFlagSet("bootstrap", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
-	dirPtr := fs.String("dir", ".", "upstream project directory")
+	dirPtr := addDirFlag(fs)
 	needVendor := fs.Bool("vendor", true, "enable/disable vendoring (true/false)")
 	format, output := addOutputFlags(fs)
 	if err := fs.Parse(args); err != nil {

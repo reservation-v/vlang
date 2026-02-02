@@ -20,22 +20,9 @@ func RunBootstrap(args []string) error {
 	}
 	bootstrapFlags.Dir = absDir
 
-	vendorInfo := VendorInfo{}
-	if !bootstrapFlags.Vendor {
-		vendorInfo.Status = "skipped"
-		vendorInfo.Enabled = false
-	} else {
-		hadVendorBefore, err := bootstrap.Vendor(bootstrapFlags.Dir)
-		if err != nil {
-			return fmt.Errorf("vendor: %w", err)
-		}
-		if hadVendorBefore {
-			vendorInfo.Status = "updated"
-			vendorInfo.Enabled = true
-		} else {
-			vendorInfo.Status = "created"
-			vendorInfo.Enabled = true
-		}
+	vendorInfo, getVendorErr := getVendorInfo(bootstrapFlags.Vendor, bootstrapFlags.Dir)
+	if getVendorErr != nil {
+		return fmt.Errorf("get_vendor info: %w", getVendorErr)
 	}
 
 	projectInfo, err := bootstrap.Inspect(bootstrapFlags.Dir)
@@ -72,13 +59,13 @@ func RunBootstrap(args []string) error {
 	return nil
 }
 
-type BootstrapFlags struct {
+type bootstrapFlags struct {
 	Dir    string
 	Vendor bool
 	Out    OutputFlags
 }
 
-func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
+func parseBootstrapFlags(args []string) (bootstrapFlags, error) {
 	fs := flag.NewFlagSet("bootstrap", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
@@ -86,14 +73,36 @@ func parseBootstrapFlags(args []string) (BootstrapFlags, error) {
 	needVendor := fs.Bool("vendor", true, "enable/disable vendoring (true/false)")
 	format, output := addOutputFlags(fs)
 	if err := fs.Parse(args); err != nil {
-		return BootstrapFlags{}, err
+		return bootstrapFlags{}, err
 	}
 
-	bsFlags := BootstrapFlags{
+	bsFlags := bootstrapFlags{
 		Dir:    *dirPtr,
 		Vendor: *needVendor,
 		Out:    OutputFlags{Format: *format, Output: *output},
 	}
 
 	return bsFlags, nil
+}
+
+func getVendorInfo(needVendor bool, dir string) (VendorInfo, error) {
+	vendorInfo := VendorInfo{}
+	if !needVendor {
+		vendorInfo.Status = "skipped"
+		vendorInfo.Enabled = false
+	} else {
+		hadVendorBefore, err := bootstrap.Vendor(dir)
+		if err != nil {
+			return VendorInfo{}, fmt.Errorf("vendor: %w", err)
+		}
+		if hadVendorBefore {
+			vendorInfo.Status = "updated"
+			vendorInfo.Enabled = true
+		} else {
+			vendorInfo.Status = "created"
+			vendorInfo.Enabled = true
+		}
+	}
+
+	return vendorInfo, nil
 }

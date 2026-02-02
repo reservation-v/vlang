@@ -15,13 +15,10 @@ func Run(args []string) error {
 
 	switch subCommand {
 	case "bootstrap":
-		err := cli.RunBootstrap(cmdArgs)
-		if err != nil {
-			return err
-		}
+		return cli.RunBootstrap(cmdArgs)
+	case "inspect":
+		return cli.RunInspect(cmdArgs)
 	default:
 		return fmt.Errorf("unknown subcommand %q", subCommand)
 	}
-
-	return nil
 }

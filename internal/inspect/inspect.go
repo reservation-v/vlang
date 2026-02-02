@@ -10,7 +10,7 @@ import (
 	"github.com/reservation-v/vlang/internal/modfile"
 )
 
-type Facts struct {
+type Info struct {
 	Dir          string `json:"dir"`
 	ModulePath   string `json:"module_path"`
 	ImportPath   string `json:"import_path"`
@@ -22,19 +22,17 @@ type Facts struct {
 	HasGearSpec  bool   `json:"has_gear_spec"`
 }
 
-// func RunInspect(args []string) error {}
-
-func Inspect(dir string) (Facts, error) {
+func Inspect(dir string) (Info, error) {
 	goModPath := filepath.Join(dir, "go.mod")
 
 	file, readErr := os.ReadFile(goModPath)
 	if readErr != nil {
-		return Facts{}, fmt.Errorf("read go.mod: %w", readErr)
+		return Info{}, fmt.Errorf("read go.mod: %w", readErr)
 	}
 
 	modulePath, parseModErr := modfile.ParseModulePath(file)
 	if parseModErr != nil {
-		return Facts{}, fmt.Errorf("parse module path: %w", parseModErr)
+		return Info{}, fmt.Errorf("parse module path: %w", parseModErr)
 	}
 
 	importPath := modulePath
@@ -51,38 +49,38 @@ func Inspect(dir string) (Facts, error) {
 	} else if len(importSlice) == 1 {
 		name = importSlice[0]
 	} else {
-		return Facts{}, fmt.Errorf("invalid import path: %q", importPath)
+		return Info{}, fmt.Errorf("invalid import path: %q", importPath)
 	}
 
 	name = strings.ToLower(name)
 
 	goVersion, goParseErr := modfile.ParseGoVersion(file)
 	if goParseErr != nil {
-		return Facts{}, fmt.Errorf("parse go version: %w", goParseErr)
+		return Info{}, fmt.Errorf("parse go version: %w", goParseErr)
 	}
 
 	hasVendor, hasVendorErr := hasDir(dir, "vendor")
 	if hasVendorErr != nil {
-		return Facts{}, hasVendorErr
+		return Info{}, hasVendorErr
 	}
 
 	hasGearDir, hasGearDirErr := hasDir(dir, ".gear")
 	if hasGearDirErr != nil {
-		return Facts{}, hasGearDirErr
+		return Info{}, hasGearDirErr
 	}
 
 	hasGearRules, hasGearRulesErr := hasFile(dir, filepath.Join(".gear", "rules"))
 	if hasGearRulesErr != nil {
-		return Facts{}, hasGearRulesErr
+		return Info{}, hasGearRulesErr
 	}
 
 	specName := filepath.Join(".gear", name+".spec")
 	hasGearSpec, hasSpecErr := hasFile(dir, specName)
 	if hasSpecErr != nil {
-		return Facts{}, hasSpecErr
+		return Info{}, hasSpecErr
 	}
 
-	return Facts{
+	return Info{
 		Dir:          dir,
 		ModulePath:   modulePath,
 		ImportPath:   importPath,

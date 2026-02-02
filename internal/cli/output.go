@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/reservation-v/vlang/internal/bootstrap"
+	"github.com/reservation-v/vlang/internal/inspect"
 )
 
 type VendorInfo struct {
@@ -16,6 +17,17 @@ type VendorInfo struct {
 type output struct {
 	ProjectInfo bootstrap.ProjectInfo `json:"project_info"`
 	Vendor      VendorInfo            `json:"vendor"`
+}
+
+func WriteOutputInspect(w io.Writer, format string, info inspect.Info) error {
+	switch format {
+	case "json":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(info)
+	default:
+		return fmt.Errorf("unknown output format: %s", format)
+	}
 }
 
 func WriteOutput(w io.Writer, format string, projectInfo bootstrap.ProjectInfo, vendorInfo VendorInfo) error {

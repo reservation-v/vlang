@@ -14,7 +14,7 @@ type OutputFlags struct {
 }
 
 func addOutputFlags(fs *flag.FlagSet) (formatPtr *string, outputPtr *string) {
-	formatPtr = fs.String("format", "json", "how to format project info")
+	formatPtr = fs.String("format", "text", "how to format project info")
 	outputPtr = fs.String("output", "", "write output to file (default: stdout)")
 	return formatPtr, outputPtr
 }

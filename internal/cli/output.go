@@ -25,6 +25,8 @@ func WriteOutputInspect(w io.Writer, format string, info inspect.Info) error {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(info)
+	case "text":
+		return printInspect(w, info)
 	default:
 		return fmt.Errorf("unknown output format: %s", format)
 	}
@@ -59,6 +61,26 @@ func printer(w io.Writer, projectInfo bootstrap.ProjectInfo, vendorInfo VendorIn
 	)
 	if err != nil {
 		return fmt.Errorf("printer: %w", err)
+	}
+
+	return nil
+}
+
+func printInspect(w io.Writer, info inspect.Info) error {
+	_, err := fmt.Fprintln(w,
+		"Inspect Info",
+		"\nDir:", info.Dir,
+		"\nModulePath:", info.ModulePath,
+		"\nImportPath:", info.ImportPath,
+		"\nName:", info.Name,
+		"\nGoVersion:", info.GoVersion,
+		"\nHasVendor:", info.HasVendor,
+		"\nHasGearDir:", info.HasGearDir,
+		"\nHasGearRules:", info.HasGearRules,
+		"\nHasGearSpec:", info.HasGearSpec,
+	)
+	if err != nil {
+		return fmt.Errorf("inspect printer: %w", err)
 	}
 
 	return nil

@@ -5,30 +5,42 @@ import (
 	"strings"
 )
 
-func ParseModulePath(data []byte) (string, error) {
+func parseDirective(data []byte, key string) (string, error) {
 	stringArr := strings.Split(string(data), "\n")
 
-	for _, line := range stringArr {
-		line = strings.TrimSpace(line)
+	for _, raw := range stringArr {
+		line := strings.TrimSpace(raw)
 
-		if strings.HasPrefix(line, "module ") {
-			line = strings.TrimSpace(line[len("module "):])
-			return line, nil
+		if idx := strings.Index(line, "//"); idx >= 0 {
+			line = strings.TrimSpace(line[:idx])
 		}
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
+		if fields[0] != key {
+			continue
+		}
+		if len(fields) != 2 {
+			return "", fmt.Errorf("%s directive malformed", key)
+		}
+		if fields[1] == "" {
+			return "", fmt.Errorf("%s directive has empty value", key)
+		}
+		return fields[1], nil
 	}
-	return "", fmt.Errorf("module not found in go.mod")
+
+	return "", fmt.Errorf("%s not found in go.mod", key)
+}
+
+func ParseModulePath(data []byte) (string, error) {
+	return parseDirective(data, "module")
 }
 
 func ParseGoVersion(data []byte) (string, error) {
-	stringArr := strings.Split(string(data), "\n")
-
-	for _, line := range stringArr {
-		line = strings.TrimSpace(line)
-
-		if strings.HasPrefix(line, "go ") {
-			line = strings.TrimSpace(line[len("go "):])
-			return line, nil
-		}
-	}
-	return "", fmt.Errorf("go version not found in go.mod")
+	return parseDirective(data, "go")
 }

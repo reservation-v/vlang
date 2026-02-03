@@ -14,14 +14,14 @@ type inspectFlags struct {
 }
 
 func RunInspect(args []string) error {
-	inspectFlgs, inspectFlagsErr := parseInspectFlags(args)
-	if inspectFlagsErr != nil {
-		return fmt.Errorf("inspect parse flags: %w", inspectFlagsErr)
+	inspectFlgs, parseErr := parseInspectFlags(args)
+	if parseErr != nil {
+		return fmt.Errorf("inspect parse flags: %w", parseErr)
 	}
 
-	absDir, absPathErr := absPath(inspectFlgs.Dir)
-	if absPathErr != nil {
-		return fmt.Errorf("get absolute path: %w", absPathErr)
+	absDir, absErr := absPath(inspectFlgs.Dir)
+	if absErr != nil {
+		return fmt.Errorf("get absolute path: %w", absErr)
 	}
 	inspectFlgs.Dir = absDir
 

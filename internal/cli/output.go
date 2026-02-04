@@ -7,6 +7,7 @@ import (
 
 	"github.com/reservation-v/vlang/internal/bootstrap"
 	"github.com/reservation-v/vlang/internal/inspect"
+	"github.com/reservation-v/vlang/internal/validate"
 )
 
 type VendorInfo struct {
@@ -17,6 +18,19 @@ type VendorInfo struct {
 type output struct {
 	ProjectInfo bootstrap.ProjectInfo `json:"project_info"`
 	Vendor      VendorInfo            `json:"vendor"`
+}
+
+func WriteOutputValidate(w io.Writer, format string, report validate.Report) error {
+	switch format {
+	case "json":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(report)
+	case "text":
+		return printValidate(w, report)
+	default:
+		return fmt.Errorf("unknown output format: %s", format)
+	}
 }
 
 func WriteOutputInspect(w io.Writer, format string, info inspect.Info) error {
@@ -81,6 +95,29 @@ func printInspect(w io.Writer, info inspect.Info) error {
 	)
 	if err != nil {
 		return fmt.Errorf("inspect printer: %w", err)
+	}
+
+	return nil
+}
+
+func printValidate(w io.Writer, report validate.Report) error {
+	_, err := fmt.Fprintf(w,
+		"Validate (%s)\nVerdict: %s\nModulePath: %s\nName: %s\nIssues: %d\n",
+		report.Stage,
+		report.Verdict,
+		report.ModulePath,
+		report.Name,
+		len(report.Issues),
+	)
+	if err != nil {
+		return fmt.Errorf("validate printer: %w", err)
+	}
+
+	for _, issue := range report.Issues {
+		_, err = fmt.Fprintf(w, "- %s %s %s (%s)\n", issue.Severity, issue.Code, issue.Message, issue.Path)
+		if err != nil {
+			return fmt.Errorf("validate printer: %w", err)
+		}
 	}
 
 	return nil

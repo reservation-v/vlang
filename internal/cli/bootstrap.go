@@ -8,29 +8,35 @@ import (
 	"github.com/reservation-v/vlang/internal/bootstrap"
 )
 
+type bootstrapFlags struct {
+	Dir    string
+	Vendor bool
+	Out    OutputFlags
+}
+
 func RunBootstrap(args []string) error {
-	bootstrapFlags, err := parseBootstrapFlags(args)
+	bootstrapFlgs, err := parseBootstrapFlags(args)
 	if err != nil {
 		return fmt.Errorf("bootstrap parse flags: %w", err)
 	}
 
-	absDir, err := absPath(bootstrapFlags.Dir)
+	absDir, err := absPath(bootstrapFlgs.Dir)
 	if err != nil {
 		return err
 	}
-	bootstrapFlags.Dir = absDir
+	bootstrapFlgs.Dir = absDir
 
-	vendorInfo, getVendorErr := getVendorInfo(bootstrapFlags.Vendor, bootstrapFlags.Dir)
-	if getVendorErr != nil {
-		return fmt.Errorf("get_vendor info: %w", getVendorErr)
+	vendorInfo, err := getVendorInfo(bootstrapFlgs.Vendor, bootstrapFlgs.Dir)
+	if err != nil {
+		return fmt.Errorf("get_vendor info: %w", err)
 	}
 
-	projectInfo, err := bootstrap.Inspect(bootstrapFlags.Dir)
+	projectInfo, err := bootstrap.Inspect(bootstrapFlgs.Dir)
 	if err != nil {
 		return fmt.Errorf("inspect: %w", err)
 	}
 
-	writer, closeFn, existed, err := openOutputWriter(bootstrapFlags.Out.Output)
+	writer, closeFn, existed, err := openOutputWriter(bootstrapFlgs.Out.Output)
 
 	if err != nil {
 		return fmt.Errorf("open output writer: %w", err)
@@ -43,12 +49,12 @@ func RunBootstrap(args []string) error {
 		}
 	}()
 
-	err = WriteOutput(writer, bootstrapFlags.Out.Format, projectInfo, vendorInfo)
+	err = WriteOutput(writer, bootstrapFlgs.Out.Format, projectInfo, vendorInfo)
 	if err != nil {
 		return fmt.Errorf("write output: %w", err)
 	}
 
-	if bootstrapFlags.Out.Output != "" {
+	if bootstrapFlgs.Out.Output != "" {
 		if existed {
 			fmt.Fprintln(os.Stderr, "file was overwritten")
 		} else {
@@ -57,12 +63,6 @@ func RunBootstrap(args []string) error {
 	}
 
 	return nil
-}
-
-type bootstrapFlags struct {
-	Dir    string
-	Vendor bool
-	Out    OutputFlags
 }
 
 func parseBootstrapFlags(args []string) (bootstrapFlags, error) {

@@ -18,6 +18,8 @@ func Run(args []string) error {
 		return cli.RunBootstrap(cmdArgs)
 	case "inspect":
 		return cli.RunInspect(cmdArgs)
+	case "validate":
+		return cli.RunValidate(cmdArgs)
 	default:
 		return fmt.Errorf("unknown subcommand %q", subCommand)
 	}

@@ -3,6 +3,7 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/reservation-v/vlang/internal/validate"
@@ -34,30 +35,11 @@ func RunValidate(args []string) error {
 		return fmt.Errorf("stage %s not supported", validateFlgs.Stage)
 	}
 
-	writer, closeFn, existed, openWriterErr := openOutputWriter(validateFlgs.Out.Output)
-
-	if openWriterErr != nil {
-		return fmt.Errorf("open output writer: %w", openWriterErr)
-	}
-
-	defer func() {
-		closeErr := closeFn()
-		if closeErr != nil {
-			fmt.Fprintln(os.Stderr, closeErr)
-		}
-	}()
-
-	writeOutputErr := WriteOutputValidate(writer, validateFlgs.Out.Format, report)
-	if writeOutputErr != nil {
-		return fmt.Errorf("write output: %w", writeOutputErr)
-	}
-
-	if validateFlgs.Out.Output != "" {
-		if existed {
-			fmt.Fprintln(os.Stderr, "file was overwritten")
-		} else {
-			fmt.Fprintln(os.Stderr, "file was created")
-		}
+	writeErr := writeOutputWriter(validateFlgs.Out.Output, func(w io.Writer) error {
+		return WriteOutputValidate(w, validateFlgs.Out.Format, report)
+	})
+	if writeErr != nil {
+		return writeErr
 	}
 
 	return nil

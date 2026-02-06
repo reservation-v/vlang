@@ -3,6 +3,7 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/reservation-v/vlang/internal/inspect"
@@ -30,29 +31,11 @@ func RunInspect(args []string) error {
 		return fmt.Errorf("inspect: %w", inspectErr)
 	}
 
-	writer, closeFn, existed, openWriterErr := openOutputWriter(inspectFlgs.Out.Output)
-	if openWriterErr != nil {
-		return fmt.Errorf("open output writer: %w", openWriterErr)
-	}
-
-	defer func() {
-		closeErr := closeFn()
-		if closeErr != nil {
-			fmt.Fprintln(os.Stderr, closeErr)
-		}
-	}()
-
-	writeOutputErr := WriteOutputInspect(writer, inspectFlgs.Out.Format, info)
-	if writeOutputErr != nil {
-		return fmt.Errorf("write output: %w", writeOutputErr)
-	}
-
-	if inspectFlgs.Out.Output != "" {
-		if existed {
-			fmt.Fprintln(os.Stderr, "file was overwritten")
-		} else {
-			fmt.Fprintln(os.Stderr, "file was created")
-		}
+	writeErr := writeOutputWriter(inspectFlgs.Out.Output, func(w io.Writer) error {
+		return WriteOutputInspect(w, inspectFlgs.Out.Format, info)
+	})
+	if writeErr != nil {
+		return fmt.Errorf("write output: %w", writeErr)
 	}
 
 	return nil
